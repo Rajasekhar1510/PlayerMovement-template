@@ -45,14 +45,10 @@ namespace Rajasekhar
         #region CASH REFERENCE
         public void CashCollected()
         {
-            CashAmt++;
-            updateCashText();
+           CashAmt++;
+           cashText.text = "CASH:" + CashAmt.ToString();
         }
 
-        public void updateCashText()
-        {
-            cashText.text = "CASH:" + CashAmt.ToString();
-        }
         #endregion
         void Update()
         {
@@ -75,9 +71,16 @@ namespace Rajasekhar
         }
 
         //SAVING AND LOADING PLAYERS STATS-------->>>>>>>>
-        #region LOADING AND SAVING HEALTH DATA
+        #region LOADING AND SAVING STATS DATA
         public void LoadData(GameData gameData)
         {
+            foreach(KeyValuePair<string, bool> pair in gameData.cash)
+            {
+                if(pair.Value)
+                {
+                    CashAmt++;
+                }
+            }
             this.health = gameData.healthCount;
             maxHealth = 100;
         }
@@ -86,6 +89,7 @@ namespace Rajasekhar
         {
             gameData.healthCount = this.health;
             maxHealth = 100;
+
         }
         #endregion
     }

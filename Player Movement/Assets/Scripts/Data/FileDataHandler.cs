@@ -13,11 +13,15 @@ namespace Rajasekhar
         private string dataDirPath = "";
         private string dataFileName = "";
 
+        private bool useEncryption = false;
+        private readonly string encryptionCodeWord = "word";
+
         #region SETTING THE DIRECTORY DATA PATH
-        public FileDataHandler(string dataDirPath, string dataFileName)
+        public FileDataHandler(string dataDirPath, string dataFileName, bool useEncryption)
         {
             this.dataDirPath = dataDirPath;
             this.dataFileName = dataFileName;
+            this.useEncryption = useEncryption;
         }
 
         #endregion
@@ -41,6 +45,12 @@ namespace Rajasekhar
                         {
                             dataToLoad = reader.ReadToEnd();
                         }
+                    }
+
+                    //OPTIONALLY DECRYPT THE FILE
+                    if (useEncryption)
+                    {
+                        dataToLoad = EncryptDecrypt(dataToLoad);
                     }
 
                     //deserialize the data
@@ -69,6 +79,12 @@ namespace Rajasekhar
                 //serialize game data into a json string
                 string dataToStore = JsonUtility.ToJson(gameData, true);
 
+                //OPTIONALLY ENCRYPT THE DATA
+                if (useEncryption)
+                {
+                    dataToStore = EncryptDecrypt(dataToStore);
+                }
+
                 //write the serialized data to the file
                 using (FileStream stream = new FileStream(fullPath, FileMode.Create))
                 {
@@ -82,6 +98,19 @@ namespace Rajasekhar
             {
                 Debug.LogError("Error occured to save to file" + fullPath + "\n" + e);
             }
+        }
+        #endregion
+
+        //THE BELOW IS A SIMPLE IMPLEMENTATION OF XOR ENCRYPTION
+        #region ENCRYPTION AND DECRYPTION BY XOR
+        private string EncryptDecrypt(string data)
+        {
+            string modifiedData = "";
+            for (int i = 0; i < data.Length; i++)
+            {
+                modifiedData += (char)(data[i] ^ encryptionCodeWord[i % encryptionCodeWord.Length]);
+            }
+            return modifiedData;
         }
         #endregion
     }

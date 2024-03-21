@@ -11,7 +11,7 @@ namespace Rajasekhar
         public float healthCount;
         public string characterName;
         public float secondsPlayer;
-        public Dictionary<string, bool> cashCollected;
+        public SerializableDictionary<string, bool> cash;
 
         [Header("World COORDINATES")]
         public float xPosition;
@@ -26,7 +26,7 @@ namespace Rajasekhar
         public GameData()
         {
             this.healthCount = 100;
-            cashCollected = new Dictionary<string, bool>();
+            cash = new SerializableDictionary<string, bool>();
         }
     }
 
