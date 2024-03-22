@@ -7,25 +7,34 @@ using UnityEngine.UI;
 
 namespace Rajasekhar
 {
-    public class MainMenu : MonoBehaviour
+    public class MainMenu : Menu
     {
+        [Header("Menu Navigation")]
+        [SerializeField] private SaveSlotsMenu saveSlotsMenu;
+
         [Header("buttons")]
         [SerializeField]private Button newGameButton;
         [SerializeField]private Button continueGameButton;
+        [SerializeField]private Button loadGameButton;
 
         private void Start()
         {
             if (!DataPersistenceManager.instance.HasGameData())
             {
                 continueGameButton.interactable = false;
+                loadGameButton.interactable = false;
             }
         }
         public void OnNewGameClicked()
         {
-            DisableAllButtons();
-            DataPersistenceManager.instance.NewGame();
+            saveSlotsMenu.ActivateMenu(false);
+            this.DeactivateMenu();
+        }
 
-            SceneManager.LoadSceneAsync("Movement");
+        public void OnLoadGameClicked()
+        {
+            saveSlotsMenu.ActivateMenu(true);
+            this.DeactivateMenu();
         }
 
         public void OnContinueGameClicked()
@@ -33,12 +42,22 @@ namespace Rajasekhar
             DisableAllButtons();
             SceneManager.LoadSceneAsync("Movement");
         }
+        public void ActivateMenu()
+        {
+            this.gameObject.SetActive(true);
+        }
+        public void DeactivateMenu()
+        {
+            this.gameObject.SetActive(false);
+        } 
 
         private void DisableAllButtons()
         {
             newGameButton.interactable = false;
             continueGameButton.interactable = false;    
         }
+
+
 
     }
 }

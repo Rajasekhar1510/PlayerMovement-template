@@ -10,6 +10,9 @@ namespace Rajasekhar
     {
         [Header("DEBUGGING")]
         [SerializeField] private bool initializeDataIfNull = false;
+        [SerializeField] private bool disableDataPersistence = false;
+        [SerializeField] private bool overrideSelectedProfileId = false;
+        [SerializeField] private string testSelectedProfileId = "test";
 
         [Header("File Storage Config")]
         [SerializeField] private string fileName;
@@ -21,6 +24,7 @@ namespace Rajasekhar
 
         private FileDataHandler dataHandler;
 
+        private string selectedProfileId = "";
         public static DataPersistenceManager instance { get; private set; }
 
         private void Awake()
@@ -36,7 +40,19 @@ namespace Rajasekhar
 
             DontDestroyOnLoad(this.gameObject);
 
+            if (disableDataPersistence)
+            {
+                Debug.LogWarning("Data Persistence is currently disabled");
+            }
+
             this.dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
+            this.selectedProfileId = dataHandler.GetMostRecentlyUpdatedProfileId();
+
+            if(overrideSelectedProfileId)
+            {
+                this.selectedProfileId = testSelectedProfileId;
+                Debug.LogWarning("override selected profile id with test id" + testSelectedProfileId);
+            }
         }
 
         private void OnEnable()
@@ -61,6 +77,11 @@ namespace Rajasekhar
             SaveGame();
         }
 
+        public void ChangeSelectedProfileId(string newProfileId)
+        {
+            this.selectedProfileId = newProfileId;
+            LoadGame();
+        }
 
         #region NEW GAME
 
@@ -74,8 +95,12 @@ namespace Rajasekhar
         #region LOAD GAME
         public void LoadGame()
         {
+            if (disableDataPersistence)
+            {
+                return;
+            }
             //Load any saved data from a file using the data handler, if there is none, dont.
-            this.gameData = dataHandler.Load();
+            this.gameData = dataHandler.Load(selectedProfileId);
 
             //start a new game if the data is null
             if (this.gameData == null && initializeDataIfNull)
@@ -101,6 +126,11 @@ namespace Rajasekhar
         #region SAVE GAME
         public void SaveGame()
         {
+            if (disableDataPersistence)
+            {
+                return;
+            }
+
             //if we dont have any data to save, log a warning here.
             if (this.gameData == null)
             {
@@ -113,7 +143,10 @@ namespace Rajasekhar
             {
                 dataPersistenceObj.SaveData(ref gameData);
             }
-            dataHandler.Save(ref gameData);
+
+            gameData.lastUpdated = System.DateTime.Now.ToBinary();
+
+            dataHandler.Save(ref gameData, selectedProfileId);
         }
 
         #endregion
@@ -138,6 +171,11 @@ namespace Rajasekhar
         public bool HasGameData()
         {
             return gameData != null;
+        }
+
+        public Dictionary<string, GameData> GetAllProfilesGameData()
+        {
+            return dataHandler.LoadAllProfiles();
         }
 
     }
