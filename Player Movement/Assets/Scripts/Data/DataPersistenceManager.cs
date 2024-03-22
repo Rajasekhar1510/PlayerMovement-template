@@ -2,11 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 namespace Rajasekhar
 {
     public class DataPersistenceManager : MonoBehaviour
     {
+        [Header("DEBUGGING")]
+        [SerializeField] private bool initializeDataIfNull = false;
+
         [Header("File Storage Config")]
         [SerializeField] private string fileName;
         [SerializeField] private bool useEncryption;
@@ -21,19 +25,42 @@ namespace Rajasekhar
 
         private void Awake()
         {
+
             if (instance != null)
             {
-                Debug.LogError("Found more than one DP Manager in the scene");
+                Debug.LogError("Found more than one DP Manager in the scene & new manager was destroyed");
+                Destroy(this.gameObject);
+                return;
             }
             instance = this;
+
+            DontDestroyOnLoad(this.gameObject);
+
+            this.dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
         }
 
-        private void Start()
+        private void OnEnable()
         {
-            this.dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+        }
+
+
+        public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
             this.dataPersistenceObjects = FindAllDataPersistenceObjects();
             LoadGame();
         }
+
+        public void OnSceneUnloaded(Scene scene)
+        {
+            SaveGame();
+        }
+
 
         #region NEW GAME
 
@@ -47,13 +74,19 @@ namespace Rajasekhar
         #region LOAD GAME
         public void LoadGame()
         {
-            //Load any saved data from a file using the data handler.
+            //Load any saved data from a file using the data handler, if there is none, dont.
             this.gameData = dataHandler.Load();
+
+            //start a new game if the data is null
+            if (this.gameData == null && initializeDataIfNull)
+            {
+                NewGame();
+            }
 
             if (this.gameData == null)
             {
-                Debug.Log("No data was found");
-                NewGame();
+                Debug.Log("No data was found, A new GAme needs to be started");
+                return;
             }
 
             //Push the loaded data to all the scripts
@@ -68,6 +101,13 @@ namespace Rajasekhar
         #region SAVE GAME
         public void SaveGame()
         {
+            //if we dont have any data to save, log a warning here.
+            if (this.gameData == null)
+            {
+                Debug.LogWarning("no data was found, a new game needs to be started before the game is saved");
+                return;
+            }
+
             //Pass the data to other scripts that can update it and save the data files using data handler.
             foreach (IDataPersistence dataPersistenceObj in dataPersistenceObjects)
             {
@@ -93,6 +133,11 @@ namespace Rajasekhar
 
             return new List<IDataPersistence>(dataPersistenceObjects);
 
+        }
+
+        public bool HasGameData()
+        {
+            return gameData != null;
         }
 
     }
